@@ -2,6 +2,9 @@
 import { ref, onMounted } from 'vue'
 import api from '@/plugins/axios'
 import Loading from 'vue-loading-overlay'
+import useGenreStore from '@/stores/genre';
+
+const genreStore = useGenreStore();
 
 const isLoading = ref(false);
 const getGenreName = (id) => genres.value.find((genre) => genre.id === id).name
@@ -10,9 +13,10 @@ const tvShows = ref([]);
 const formatDate = (date) => new Date(date).toLocaleDateString('pt-BR')
 
 onMounted(async () => {
-  const response = await api.get('genre/tv/list?language=pt-BR')
-  genres.value = response.data.genres
-})
+  isLoading.value = true;
+  await genreStore.getAllGenres('tvShow');
+  isLoading.value = false;
+});
 
 const listTvShows = async (genreId) => {
   isLoading.value = true;
@@ -30,7 +34,7 @@ const listTvShows = async (genreId) => {
 <template>
   <h1>Séries de TV</h1>
   <ul class="genre-list">
-    <li v-for="genre in genres" :key="genre.id" @click="listTvShows(genre.id)" class="genre-item">
+    <li v-for="genre in genreStore.genres" :key="genre.id" @click="listTvShows(genre.id)" class="genre-item">
       {{ genre.name }}
     </li>
   </ul>
@@ -42,9 +46,11 @@ const listTvShows = async (genreId) => {
       <div class="tv-show-details">
         <p class="tv-show-title">{{ tvShow.name }}</p>
         <p class="tv-show-release-date">{{ formatDate(tvShow.release_date) }}</p>
-        <p class="tv-show-genres"><span v-for="genre_id in tvShows.genre_ids" :key="genre_id" @click="listTvShows(genre_id)">
-            {{ getGenreName(genre_id) }}
-          </span></p>
+        <p class="tv-show-genres">
+          <span v-for="genre_id in movie.genre_ids" :key="genre_id" @click="listTvShows(genre_id)">
+            {{ genreStore.getGenreName(genre_id) }}
+          </span>
+        </p>
       </div>
     </div>
   </div>
@@ -73,6 +79,7 @@ const listTvShows = async (genreId) => {
   background-color: #455a08;
   box-shadow: 0 0 0.5rem #748708;
 }
+
 .tv-show-list {
   display: flex;
   flex-wrap: wrap;
